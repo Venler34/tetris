@@ -18,7 +18,6 @@ window.addEventListener('load', function() {
                 }
             })
             window.addEventListener("keyup", e => {
-                console.log(e.key);
                 const index = game.keys.indexOf(e.key)
                 if(index > -1) {
                     game.keys.splice(index, 1);
@@ -50,6 +49,7 @@ window.addEventListener('load', function() {
             this.game = game;
             this.speedX = 0;
             this.maxSpeed = 1;
+            this.markedForDeletion = false;
         }
         update() {
             if(this.game.keys.includes("a")) {
@@ -59,7 +59,12 @@ window.addEventListener('load', function() {
             } else {
                 this.speedX = 0;
             }
-            this.blocks.forEach(block => block.update(this.speedX));
+            this.blocks.forEach(block => { 
+                block.update(this.speedX);
+                if (block.y >= rows) {
+                    this.markedForDeletion = true;
+                }
+            })
         }
     }
     class Straight extends Tetromino{
