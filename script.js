@@ -26,11 +26,9 @@ window.addEventListener('load', function() {
         }
     }
     class Block {
-        constructor(x, y, color) {
+        constructor(x, y) {
             this.x = x;
             this.y = y;
-            this.length = canvas.height / rows;
-            this.color = color;
         }
         updateY() {
             this.y += 1;
@@ -55,10 +53,6 @@ window.addEventListener('load', function() {
                 return false;
             }
             return true;
-        }
-        draw(context) {
-            context.fillStyle = this.color;
-            context.fillRect(this.x * this.length, this.y * this.length, this.length-1, this.length-1);
         }
         printCords() {
             console.log("(" + this.x + "," + this.y + ")");
@@ -130,30 +124,95 @@ window.addEventListener('load', function() {
             for(let i = start; i < start + this.length; i++) {
                 const xCord = i;
                 const yCord = 0; //top of tetris board
-                this.blocks.push(new Block(xCord, yCord, this.color));
+                this.blocks.push(new Block(xCord, yCord));
             }
         }
-        draw(context) {
-            this.blocks.forEach(block => block.draw(context));
-        }
     }
-    class Square {
+    class Square extends Tetromino {
         constructor(game, color) {
             super(game);
             this.blocks = [];
             this.length = 2;
             this.color = color;
-            
+            let start = (cols - this.length) / 2;
+            for(let row = 0; row < this.length; row++){
+                for(let col = start; col < start + this.length; col++){
+                    const xCord = col;
+                    const yCord = row;
+                    this.blocks.push(new Block(xCord,yCord));
+                }
+            }
         }
     }
-    class Skew {
-
+    class Right_Skew extends Tetromino{
+        constructor(game, color) {
+            super(game);
+            this.blocks = [];
+            this.length = 3;
+            this.color = color;
+            let start = parseInt((cols - this.length) / 2,10);
+            
+            this.blocks.push(new Block(start, 1));
+            this.blocks.push(new Block(start+1, 0));
+            this.blocks.push(new Block(start+1, 1));
+            this.blocks.push(new Block(start+2, 0));
+        }
     }
-    class L {
-
+    class Left_Skew extends Tetromino {
+        constructor(game, color) {
+            super(game);
+            this.blocks = [];
+            this.length = 3;
+            this.color = color;
+            let start = parseInt((cols - this.length) / 2,10);
+            
+            this.blocks.push(new Block(start, 0));
+            this.blocks.push(new Block(start+1, 0));
+            this.blocks.push(new Block(start+1, 1));
+            this.blocks.push(new Block(start+2, 1));
+        }
     }
-    class T {
-
+    class L extends Tetromino{
+        constructor(game, color) {
+            super(game);
+            this.blocks = [];
+            this.length = 3;
+            this.color = color;
+            let start = parseInt((cols - this.length) / 2,10);
+            
+            this.blocks.push(new Block(start, 1));
+            this.blocks.push(new Block(start+1, 1));
+            this.blocks.push(new Block(start+2, 1));
+            this.blocks.push(new Block(start+2, 0));
+        }
+    }
+    class Reverse_L extends Tetromino {
+        constructor(game, color) {
+            super(game);
+            this.blocks = [];
+            this.length = 3;
+            this.color = color;
+            let start = parseInt((cols - this.length) / 2,10);
+            
+            this.blocks.push(new Block(start, 0));
+            this.blocks.push(new Block(start+1, 0));
+            this.blocks.push(new Block(start+2, 0));
+            this.blocks.push(new Block(start+2, 1));
+        }
+    }
+    class T extends Tetromino{
+        constructor(game, color) {
+            super(game);
+            this.blocks = [];
+            this.length = 3;
+            this.color = color;
+            let start = parseInt((cols - this.length) / 2,10);
+            
+            this.blocks.push(new Block(start, 1));
+            this.blocks.push(new Block(start+1, 1));
+            this.blocks.push(new Block(start+1, 0));
+            this.blocks.push(new Block(start+2, 1));
+        }
     }
     class UI {
 
@@ -161,7 +220,7 @@ window.addEventListener('load', function() {
     class Game {
         constructor() {
             this.inputHandler = new InputHandler(this);
-            this.blocks = ["Straight","Square","Skew","L","T"];
+            this.blocks = ["Straight","Square","Right_Skew","Left_Skew", "L", "Reverse_L", "T"];
             this.needNewBlock = true;
             this.dropTime = 1000;
             this.currentTime = 0;
@@ -178,18 +237,24 @@ window.addEventListener('load', function() {
             }
         }
         getBlock() {
-            let blockNum = 0;//parseInt(Math.random() * this.blocks.length, 10);
+            let blockNum = 6;//parseInt(Math.random() * this.blocks.length, 10);
             if(this.blocks[blockNum] === "Straight") {
                 return new Straight(this, 'blue')
 
             } else if(this.blocks[blockNum] === "Square") {
+                return new Square(this, 'yellow')
 
-            } else if(this.blocks[blockNum] === "Skew") {
+            } else if(this.blocks[blockNum] === "Right_Skew") {
+                return new Right_Skew(this, 'red');
 
+            } else if(this.blocks[blockNum] === "Left_Skew") {
+                return new Left_Skew(this, 'green');
             } else if(this.blocks[blockNum] === "L") {
-
-            } else if(this.blocks[blockNum] === "T") {
-
+                return new L(this, 'blue');
+            } else if (this.blocks[blockNum] === "Reverse_L") {
+                return new Reverse_L(this, 'orange');
+            }else if(this.blocks[blockNum] === "T") {
+                return new T(this, 'purple');
             }
         }
         createBlock() {
