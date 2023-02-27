@@ -32,9 +32,29 @@ window.addEventListener('load', function() {
             this.length = canvas.height / rows;
             this.color = color;
         }
-        update(speedX) {
-            this.x += speedX;
+        updateY() {
             this.y += 1;
+        }
+        updateX(speedX) {
+            this.x += speedX;
+        }
+        canUpdateX(speedX, board, backgroundColor) {
+            if(this.x + speedX >= cols || this.x + speedX < 0){
+                return false;
+            }
+            else if(board[this.y][this.x + speedX] != backgroundColor){
+                return false;
+            }
+            return true;
+        }
+        canUpdateY(board, backgroundColor) {
+            if(this.y + 1 >= rows){
+                return false;
+            }
+            else if(board[this.y+1][this.x] != backgroundColor){
+                return false;
+            }
+            return true;
         }
         draw(context) {
             context.fillStyle = this.color;
@@ -59,12 +79,45 @@ window.addEventListener('load', function() {
             } else {
                 this.speedX = 0;
             }
+
+            const board = this.removeCords(this.game.board);
+            const backgroundColor = this.game.backgroundColor;
+            
+
+            //checks if can update x and then updates it
+
+            let canUpdateX = true;
+            this.blocks.forEach(block => {
+                canUpdateX = canUpdateX && block.canUpdateX(this.speedX, board, backgroundColor);
+            });
+            if(canUpdateX){
+                this.blocks.forEach(block => { 
+                    block.updateX(this.speedX);
+                })
+            }
+
+            //checks if can update y and then updates it
+
+            let canUpdateY = true;
+            this.blocks.forEach(block => {
+                canUpdateY = canUpdateY && block.canUpdateY(board, backgroundColor);
+            });
+            if(canUpdateY){
+                this.blocks.forEach(block => { 
+                    block.updateY();
+                })
+            }
+
+            return canUpdateY;
+        }
+        removeCords(board) {
             this.blocks.forEach(block => { 
-                block.update(this.speedX);
-                if (block.y >= rows) {
-                    this.markedForDeletion = true;
-                }
+                board[block.y][block.x] = this.game.backgroundColor;
             })
+            return board;
+        }
+        getBlocks() {
+            return this.blocks;
         }
     }
     class Straight extends Tetromino{
@@ -85,7 +138,13 @@ window.addEventListener('load', function() {
         }
     }
     class Square {
-
+        constructor(game, color) {
+            super(game);
+            this.blocks = [];
+            this.length = 2;
+            this.color = color;
+            
+        }
     }
     class Skew {
 
@@ -107,6 +166,16 @@ window.addEventListener('load', function() {
             this.dropTime = 1000;
             this.currentTime = 0;
             this.keys = [];
+            this.board = [];
+            this.backgroundColor = 'black';
+            this.blockLength = canvas.height / rows;
+            for(let row = 0; row < rows; row++){
+                let currRow = [];
+                for(let col = 0; col < cols; col++){
+                    currRow.push(this.backgroundColor);
+                }
+                this.board.push(currRow);
+            }
         }
         getBlock() {
             let blockNum = 0;//parseInt(Math.random() * this.blocks.length, 10);
@@ -132,16 +201,42 @@ window.addEventListener('load', function() {
                     this.createBlock();
                     this.needNewBlock = false;
                 } else {
-                    this.block.update();
+                    this.updateBoard();
                 }
                 this.currentTime = 0;
             } else {
                 this.currentTime += deltaTime;
             }
         }
+        updateBoard() {
+            this.needNewBlock = !this.block.update();
+
+            //update board. The block was removed previously
+            const blocks = this.block.getBlocks();
+            blocks.forEach(block => {
+                this.board[block.y][block.x] = this.block.color;
+            })
+        }
+        // //Determines if Tetromino collides
+        // tetrominoCollides(blocks) {
+        //     isInvalidSpot = false;
+        //     blocks.forEach(block => {
+        //         if(block.y <= rows) {
+        //             isInvalidSpot = true;
+        //         }
+        //         else if(this.board[block.y][block.x] != this.backgroundColor) {
+        //             isInvalidSpot = true;
+        //         }
+        //     })
+        //     return isInvalidSpot;
+        // }
         draw(context) {
-            if (!this.needNewBlock) {
-                this.block.draw(context);
+            for(let row = 0; row < rows; row++){
+                for(let col = 0; col < cols; col++){
+                    const color = this.board[row][col];
+                    context.fillStyle = color;
+                    context.fillRect(col * this.blockLength, row * this.blockLength, this.blockLength-1, this.blockLength-1);
+                }
             }
         }
     }
