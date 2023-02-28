@@ -17,6 +17,8 @@ window.addEventListener('load', function() {
                     game.keys.push("d")
                 } else if (e.key === "r") {
                     game.rotate(90);
+                } else if (e.key === "e") {
+                    game.rotate(-90);
                 }
             })
             window.addEventListener("keyup", e => {
@@ -168,6 +170,9 @@ window.addEventListener('load', function() {
                 })
             }
         }
+        getPivot() {
+            return this.pivot;
+        }
     }
     class Straight extends Tetromino{
         constructor(game, color){
@@ -182,9 +187,6 @@ window.addEventListener('load', function() {
                 this.blocks.push(new Block(xCord, yCord));
             }
             this.pivot = this.blocks[1];
-        }
-        getPivot() {
-            return this.pivot;
         }
     }
     class Square extends Tetromino {
@@ -201,6 +203,7 @@ window.addEventListener('load', function() {
                     this.blocks.push(new Block(xCord,yCord));
                 }
             }
+            this.pivot = this.blocks[1];
         }
     }
     class Right_Skew extends Tetromino{
@@ -215,6 +218,8 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+1, 0));
             this.blocks.push(new Block(start+1, 1));
             this.blocks.push(new Block(start+2, 0));
+
+            this.pivot = this.blocks[1];
         }
     }
     class Left_Skew extends Tetromino {
@@ -229,6 +234,8 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+1, 0));
             this.blocks.push(new Block(start+1, 1));
             this.blocks.push(new Block(start+2, 1));
+
+            this.pivot = this.blocks[1];
         }
     }
     class L extends Tetromino{
@@ -243,6 +250,8 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+1, 1));
             this.blocks.push(new Block(start+2, 1));
             this.blocks.push(new Block(start+2, 0));
+
+            this.pivot = this.blocks[1];
         }
     }
     class Reverse_L extends Tetromino {
@@ -257,6 +266,8 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+1, 0));
             this.blocks.push(new Block(start+2, 0));
             this.blocks.push(new Block(start+2, 1));
+
+            this.pivot = this.blocks[1];
         }
     }
     class T extends Tetromino{
@@ -271,6 +282,8 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+1, 1));
             this.blocks.push(new Block(start+1, 0));
             this.blocks.push(new Block(start+2, 1));
+
+            this.pivot = this.blocks[1];
         }
     }
     class UI {
@@ -278,9 +291,17 @@ window.addEventListener('load', function() {
             this.game = game;
         }
         draw(context) {
-            context.font = '30px Helvetica';
-            context.fillStyle = 'white'
-            context.fillText("Score: " + this.game.score, 0, 40);
+            if(!this.game.gameOver)
+            {
+                context.font = '30px Helvetica';
+                context.fillStyle = 'white'
+                context.fillText("Score: " + this.game.score, 0, 40);
+            }
+            else {
+                context.font = "50px Helvetica";
+                context.fillStyle = 'white';
+                context.fillText("You scored: " + this.game.score, 80, canvas.height/2);
+            }
         }
     }
     class Game {
@@ -296,6 +317,7 @@ window.addEventListener('load', function() {
             this.backgroundColor = 'black';
             this.blockLength = canvas.height / rows;
             this.score = 0;
+            this.gameOver = false;
             for(let row = 0; row < rows; row++){
                 let currRow = [];
                 for(let col = 0; col < cols; col++){
@@ -305,7 +327,7 @@ window.addEventListener('load', function() {
             }
         }
         getBlock() {
-            let blockNum = 0;//parseInt(Math.random() * this.blocks.length, 10);
+            let blockNum = parseInt(Math.random() * this.blocks.length, 10);
             if(this.blocks[blockNum] === "Straight") {
                 return new Straight(this, 'blue')
 
@@ -326,19 +348,24 @@ window.addEventListener('load', function() {
             }
         }
         createBlock() {
-            this.block = this.getBlock();
+            if(!this.gameOver) {
+                this.block = this.getBlock();
+                this.checkGameOver();
+            }
         }
         update(deltaTime) {
-            if(this.currentTime >= this.dropTime){
-                if(this.needNewBlock) {
-                    this.createBlock();
-                    this.needNewBlock = false;
+            if(!this.gameOver) {
+                if(this.currentTime >= this.dropTime){
+                    if(this.needNewBlock) {
+                        this.createBlock();
+                        this.needNewBlock = false;
+                    } else {
+                        this.updateBoard();
+                    }
+                    this.currentTime = 0;
                 } else {
-                    this.updateBoard();
+                    this.currentTime += deltaTime;
                 }
-                this.currentTime = 0;
-            } else {
-                this.currentTime += deltaTime;
             }
         }
         updateBoard() {
@@ -375,6 +402,16 @@ window.addEventListener('load', function() {
                     }
                 }
             }
+        }
+        checkGameOver() {
+            let blocks = this.block.getBlocks();
+            let gameOver = false;
+            blocks.forEach(block => {
+                if(this.board[block.y][block.x] != this.backgroundColor) {
+                    gameOver = true;
+                }
+            })
+            this.gameOver = gameOver;
         }
         shouldRemoveRow(row) {
             for(let col = 0; col < cols; col++) {
