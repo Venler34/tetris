@@ -19,6 +19,8 @@ window.addEventListener('load', function() {
                     game.rotate(90);
                 } else if (e.key === "e") {
                     game.rotate(-90);
+                } else if (e.key === "p") {
+                    game.resetGame();
                 }
             })
             window.addEventListener("keyup", e => {
@@ -126,14 +128,6 @@ window.addEventListener('load', function() {
             }
         }
         update() {
-            // if(this.game.keys.includes("a")) {
-            //     this.speedX = -this.maxSpeed;
-            // } else if (this.game.keys.includes("d")) {
-            //     this.speedX = this.maxSpeed;
-            // } else {
-            //     this.speedX = 0;
-            // }
-
             const board = this.removeCords(this.game.board);
             const backgroundColor = this.game.backgroundColor;
 
@@ -471,7 +465,26 @@ window.addEventListener('load', function() {
             }
             return notBlockStop;
         }
+        resetGame() {
+            this.block = NaN;
+            this.needNewBlock = true;
+            this.clearBoard();
+            this.score = 0;
+            this.gameOver = false;
+        }
+        clearBoard() {
+            for(let row = 0; row < rows; row++) {
+                for(let col = 0; col < cols; col++) {
+                    this.board[row][col] = this.backgroundColor;
+                }
+            }
+        }
     }
+    
+    const button = document.getElementById("ResetButton")
+    button.addEventListener('click', function() {
+        game.resetGame();
+    })
     const game = new Game();
     let lastTime = 0;
     function animate(timeStamp) {
