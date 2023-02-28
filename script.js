@@ -11,10 +11,10 @@ window.addEventListener('load', function() {
         constructor(game) {
             this.game = game;
             window.addEventListener("keydown", e => {
-                if(e.key === "a" && !game.keys.includes("a")) {
-                    game.keys.push("a")
-                } else if(e.key === "d" && !game.keys.includes("d")) {
-                    game.keys.push("d")
+                if(e.key === "a") {
+                    game.move(-1);
+                } else if(e.key === "d") {
+                    game.move(1)
                 } else if (e.key === "r") {
                     game.rotate(90);
                 } else if (e.key === "e") {
@@ -22,9 +22,10 @@ window.addEventListener('load', function() {
                 }
             })
             window.addEventListener("keyup", e => {
-                const index = game.keys.indexOf(e.key)
-                if(index > -1) {
-                    game.keys.splice(index, 1);
+                game.move(0);
+                
+                if(e.key === " ") {
+                    game.blockToBottom();
                 }
             })
         }
@@ -108,30 +109,33 @@ window.addEventListener('load', function() {
             this.maxSpeed = 1;
             this.markedForDeletion = false;
         }
-        update() {
-            if(this.game.keys.includes("a")) {
-                this.speedX = -this.maxSpeed;
-            } else if (this.game.keys.includes("d")) {
-                this.speedX = this.maxSpeed;
-            } else {
-                this.speedX = 0;
-            }
+        move(direction) {
+            this.speedX = direction * this.maxSpeed;
 
             const board = this.removeCords(this.game.board);
-            const backgroundColor = this.game.backgroundColor;
-            
-
-            //checks if can update x and then updates it
 
             let canUpdateX = true;
             this.blocks.forEach(block => {
-                canUpdateX = canUpdateX && block.canUpdateX(this.speedX, board, backgroundColor);
+                canUpdateX = canUpdateX && block.canUpdateX(this.speedX, board, this.game.backgroundColor);
             });
             if(canUpdateX){
                 this.blocks.forEach(block => { 
                     block.updateX(this.speedX);
                 })
+                this.game.updateBoard();
             }
+        }
+        update() {
+            // if(this.game.keys.includes("a")) {
+            //     this.speedX = -this.maxSpeed;
+            // } else if (this.game.keys.includes("d")) {
+            //     this.speedX = this.maxSpeed;
+            // } else {
+            //     this.speedX = 0;
+            // }
+
+            const board = this.removeCords(this.game.board);
+            const backgroundColor = this.game.backgroundColor;
 
             //checks if can update y and then updates it
 
@@ -310,9 +314,9 @@ window.addEventListener('load', function() {
             this.ui = new UI(this);
             this.blocks = ["Straight","Square","Right_Skew","Left_Skew", "L", "Reverse_L", "T"];
             this.needNewBlock = true;
-            this.dropTime = 100;
+            this.dropTime = 300;
             this.currentTime = 0;
-            this.keys = [];
+            //this.keys = [];
             this.board = [];
             this.backgroundColor = 'black';
             this.blockLength = canvas.height / rows;
@@ -360,7 +364,7 @@ window.addEventListener('load', function() {
                         this.createBlock();
                         this.needNewBlock = false;
                     } else {
-                        this.updateBoard();
+                        this.dropBlock();
                     }
                     this.currentTime = 0;
                 } else {
@@ -368,9 +372,12 @@ window.addEventListener('load', function() {
                 }
             }
         }
-        updateBoard() {
-            this.needNewBlock = !this.block.update();
 
+        dropBlock() {
+            this.needNewBlock = !this.block.update();
+            this.updateBoard();
+        }
+        updateBoard() {
             //update board. The block was removed previously
             const blocks = this.block.getBlocks();
             blocks.forEach(block => {
@@ -426,6 +433,11 @@ window.addEventListener('load', function() {
                 this.block.rotate(degrees);
             }
         }
+        move(direction) {
+            if(!this.needNewBlock) {
+                this.block.move(direction);
+            }
+        }
         draw(context) {
             for(let row = 0; row < rows; row++){
                 for(let col = 0; col < cols; col++){
@@ -435,6 +447,29 @@ window.addEventListener('load', function() {
                 }
             }
             this.ui.draw(context);
+        }
+        blockToBottom() {
+            this.needNewBlock = true;
+            let blocks = this.block.getBlocks();
+            this.board = this.block.removeCords(this.board);
+            
+            while(this.canDrop(blocks));
+
+            this.updateBoard();
+        }
+        canDrop(blocks) {
+            let notBlockStop = true;
+            blocks.forEach(block => {
+                if(block.y >= rows - 1 || this.board[block.y+1][block.x] != this.backgroundColor) {
+                    notBlockStop = false;
+                }
+            })
+            if(notBlockStop) {
+                blocks.forEach(block => {
+                    block.y += 1;
+                })
+            }
+            return notBlockStop;
         }
     }
     const game = new Game();
