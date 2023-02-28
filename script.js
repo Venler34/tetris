@@ -15,6 +15,8 @@ window.addEventListener('load', function() {
                     game.keys.push("a")
                 } else if(e.key === "d" && !game.keys.includes("d")) {
                     game.keys.push("d")
+                } else if (e.key === "r") {
+                    game.rotate(90);
                 }
             })
             window.addEventListener("keyup", e => {
@@ -53,6 +55,45 @@ window.addEventListener('load', function() {
                 return false;
             }
             return true;
+        }
+        convertDegreesToRadians(degrees) {
+            return degrees * Math.PI / 180;
+        }
+        canRotate(degrees, row, col, board, backgroundColor) {
+            let radians = this.convertDegreesToRadians(degrees);
+            let c = Math.round(Math.cos(radians));
+            let s = Math.round(Math.sin(radians));
+            let xOrigin = this.x - col;
+            let yOrigin = this.y - row;
+
+            console.log(c + " " + s);
+
+            let xCord = (xOrigin * c - yOrigin * s) + col;
+            let yCord = (xOrigin * s + yOrigin * c) + row;
+
+        
+            if(yCord >= rows || yCord < 0 || xCord >= cols || xCord < 0){
+                console.log(xCord + " " + yCord);
+                return false;
+            }
+            if(board[yCord][xCord] != backgroundColor) {
+                return false;
+            }
+            return true;
+        }
+        rotate(degrees, row, col) {
+            let radians = this.convertDegreesToRadians(degrees);
+            //subtract the pivot
+            this.x -= col;
+            this.y -= row;
+
+            let tempX = Math.round(this.x * Math.cos(radians) - this.y * Math.sin(radians))
+            this.y = Math.round(this.x * Math.sin(radians) + this.y * Math.cos(radians))
+            this.x = tempX;
+
+            //add the pivot
+            this.x += col;
+            this.y += row;
         }
         printCords() {
             console.log("(" + this.x + "," + this.y + ")");
@@ -113,8 +154,19 @@ window.addEventListener('load', function() {
         getBlocks() {
             return this.blocks;
         }
-        rotateRight() {
+        rotate(degrees) {
+            this.removeCords(this.game.board);
+            let pivot = this.getPivot();
+            let canRotate = true;
+            this.blocks.forEach(block => {
+                canRotate = canRotate && block.canRotate(degrees, pivot.y, pivot.x, this.game.board, this.game.backgroundColor);
+            })
 
+            if(canRotate) {
+                this.blocks.forEach(block => {
+                    block.rotate(degrees, pivot.y, pivot.x);
+                })
+            }
         }
     }
     class Straight extends Tetromino{
@@ -129,6 +181,10 @@ window.addEventListener('load', function() {
                 const yCord = 0; //top of tetris board
                 this.blocks.push(new Block(xCord, yCord));
             }
+            this.pivot = this.blocks[1];
+        }
+        getPivot() {
+            return this.pivot;
         }
     }
     class Square extends Tetromino {
@@ -218,11 +274,19 @@ window.addEventListener('load', function() {
         }
     }
     class UI {
-
+        constructor(game) {
+            this.game = game;
+        }
+        draw(context) {
+            context.font = '30px Helvetica';
+            context.fillStyle = 'white'
+            context.fillText("Score: " + this.game.score, 0, 40);
+        }
     }
     class Game {
         constructor() {
             this.inputHandler = new InputHandler(this);
+            this.ui = new UI(this);
             this.blocks = ["Straight","Square","Right_Skew","Left_Skew", "L", "Reverse_L", "T"];
             this.needNewBlock = true;
             this.dropTime = 100;
@@ -231,6 +295,7 @@ window.addEventListener('load', function() {
             this.board = [];
             this.backgroundColor = 'black';
             this.blockLength = canvas.height / rows;
+            this.score = 0;
             for(let row = 0; row < rows; row++){
                 let currRow = [];
                 for(let col = 0; col < cols; col++){
@@ -240,7 +305,7 @@ window.addEventListener('load', function() {
             }
         }
         getBlock() {
-            let blockNum = 1;//parseInt(Math.random() * this.blocks.length, 10);
+            let blockNum = 0;//parseInt(Math.random() * this.blocks.length, 10);
             if(this.blocks[blockNum] === "Straight") {
                 return new Straight(this, 'blue')
 
@@ -298,7 +363,9 @@ window.addEventListener('load', function() {
                     rowToRemove.push(rowToCheck);
                 }
             }
-            
+
+            this.score += Math.pow(10, rowToRemove.length);
+
             //delete rows
             for(let rowRemove = 0; rowRemove < rowToRemove.length; rowRemove++){
                 let rowNum = rowToRemove[rowRemove] + rowRemove;
@@ -317,6 +384,11 @@ window.addEventListener('load', function() {
             }
             return true;
         }
+        rotate(degrees) {
+            if(!this.needNewBlock){
+                this.block.rotate(degrees);
+            }
+        }
         draw(context) {
             for(let row = 0; row < rows; row++){
                 for(let col = 0; col < cols; col++){
@@ -325,6 +397,7 @@ window.addEventListener('load', function() {
                     context.fillRect(col * this.blockLength, row * this.blockLength, this.blockLength-1, this.blockLength-1);
                 }
             }
+            this.ui.draw(context);
         }
     }
     const game = new Game();
