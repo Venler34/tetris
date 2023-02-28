@@ -113,6 +113,9 @@ window.addEventListener('load', function() {
         getBlocks() {
             return this.blocks;
         }
+        rotateRight() {
+
+        }
     }
     class Straight extends Tetromino{
         constructor(game, color){
@@ -222,7 +225,7 @@ window.addEventListener('load', function() {
             this.inputHandler = new InputHandler(this);
             this.blocks = ["Straight","Square","Right_Skew","Left_Skew", "L", "Reverse_L", "T"];
             this.needNewBlock = true;
-            this.dropTime = 1000;
+            this.dropTime = 100;
             this.currentTime = 0;
             this.keys = [];
             this.board = [];
@@ -237,7 +240,7 @@ window.addEventListener('load', function() {
             }
         }
         getBlock() {
-            let blockNum = 6;//parseInt(Math.random() * this.blocks.length, 10);
+            let blockNum = 1;//parseInt(Math.random() * this.blocks.length, 10);
             if(this.blocks[blockNum] === "Straight") {
                 return new Straight(this, 'blue')
 
@@ -281,20 +284,39 @@ window.addEventListener('load', function() {
             blocks.forEach(block => {
                 this.board[block.y][block.x] = this.block.color;
             })
+
+            if(this.needNewBlock)
+            {
+                this.deleteRows(); //delete any rows that are complete
+            }
         }
-        // //Determines if Tetromino collides
-        // tetrominoCollides(blocks) {
-        //     isInvalidSpot = false;
-        //     blocks.forEach(block => {
-        //         if(block.y <= rows) {
-        //             isInvalidSpot = true;
-        //         }
-        //         else if(this.board[block.y][block.x] != this.backgroundColor) {
-        //             isInvalidSpot = true;
-        //         }
-        //     })
-        //     return isInvalidSpot;
-        // }
+        deleteRows(){
+            //find rows to delete
+            let rowToRemove = [];
+            for(let rowToCheck = rows-1; rowToCheck >= 0; rowToCheck--) {
+                if(this.shouldRemoveRow(rowToCheck)) {
+                    rowToRemove.push(rowToCheck);
+                }
+            }
+            
+            //delete rows
+            for(let rowRemove = 0; rowRemove < rowToRemove.length; rowRemove++){
+                let rowNum = rowToRemove[rowRemove] + rowRemove;
+                for(let row = rowNum; row > 0; row--) {
+                    for(let col = 0; col < cols; col++) {
+                        this.board[row][col] = this.board[row-1][col];
+                    }
+                }
+            }
+        }
+        shouldRemoveRow(row) {
+            for(let col = 0; col < cols; col++) {
+                if(this.board[row][col] === this.backgroundColor){
+                    return false;
+                }
+            }
+            return true;
+        }
         draw(context) {
             for(let row = 0; row < rows; row++){
                 for(let col = 0; col < cols; col++){
