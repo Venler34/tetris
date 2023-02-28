@@ -293,7 +293,7 @@ window.addEventListener('load', function() {
             {
                 context.font = '30px Helvetica';
                 context.fillStyle = 'white'
-                context.fillText("Score: " + this.game.score, 0, 40);
+                context.fillText("Score: " + this.game.score, 20, 40);
             }
             else {
                 context.font = "50px Helvetica";
