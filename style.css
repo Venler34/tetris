@@ -40,3 +40,7 @@ h1 {
 div {
     margin-bottom: 50px;
 }
+
+#HoldTetromino {
+    margin-left: 10px;
+}

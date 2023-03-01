@@ -28,6 +28,8 @@ window.addEventListener('load', function() {
                 
                 if(e.key === " ") {
                     game.blockToBottom();
+                } else if(e.key === "c") {
+                    game.holdBlock();
                 }
             })
         }
@@ -71,8 +73,6 @@ window.addEventListener('load', function() {
             let xOrigin = this.x - col;
             let yOrigin = this.y - row;
 
-            console.log(c + " " + s);
-
             let xCord = (xOrigin * c - yOrigin * s) + col;
             let yCord = (xOrigin * s + yOrigin * c) + row;
 
@@ -105,7 +105,8 @@ window.addEventListener('load', function() {
         }
     }
     class Tetromino {
-        constructor(game) {
+        constructor(game, type) {
+            this.type = type;
             this.game = game;
             this.speedX = 0;
             this.maxSpeed = 1;
@@ -171,10 +172,25 @@ window.addEventListener('load', function() {
         getPivot() {
             return this.pivot;
         }
+        setOriginalCords() {
+            this.originalCords = [];
+            this.blocks.forEach(block => {
+                this.originalCords.push([block.x,block.y]);
+            });
+            this.originalPivot = [this.pivot.x,this.pivot.y];
+        }
+        returnToOriginalCords() {
+            for(let i = 0; i < this.blocks.length; i++) {
+                this.blocks[i].x = this.originalCords[i][0];
+                this.blocks[i].y = this.originalCords[i][1];
+            }
+            this.pivot.x = this.originalPivot[0];
+            this.pivot.y = this.originalPivot[1];
+        }
     }
     class Straight extends Tetromino{
         constructor(game, color){
-            super(game);
+            super(game, "Straight");
             this.blocks = [];
             this.length = 4;
             this.color = color;
@@ -185,11 +201,12 @@ window.addEventListener('load', function() {
                 this.blocks.push(new Block(xCord, yCord));
             }
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class Square extends Tetromino {
         constructor(game, color) {
-            super(game);
+            super(game, "Square");
             this.blocks = [];
             this.length = 2;
             this.color = color;
@@ -202,11 +219,12 @@ window.addEventListener('load', function() {
                 }
             }
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class Right_Skew extends Tetromino{
         constructor(game, color) {
-            super(game);
+            super(game, "Right_Skew");
             this.blocks = [];
             this.length = 3;
             this.color = color;
@@ -218,11 +236,12 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+2, 0));
 
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class Left_Skew extends Tetromino {
         constructor(game, color) {
-            super(game);
+            super(game, "Left_Skew");
             this.blocks = [];
             this.length = 3;
             this.color = color;
@@ -234,11 +253,12 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+2, 1));
 
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class L extends Tetromino{
         constructor(game, color) {
-            super(game);
+            super(game, "L");
             this.blocks = [];
             this.length = 3;
             this.color = color;
@@ -250,11 +270,12 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+2, 0));
 
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class Reverse_L extends Tetromino {
         constructor(game, color) {
-            super(game);
+            super(game, "Reverse_L");
             this.blocks = [];
             this.length = 3;
             this.color = color;
@@ -266,11 +287,12 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+2, 1));
 
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class T extends Tetromino{
         constructor(game, color) {
-            super(game);
+            super(game, "T");
             this.blocks = [];
             this.length = 3;
             this.color = color;
@@ -282,6 +304,7 @@ window.addEventListener('load', function() {
             this.blocks.push(new Block(start+2, 1));
 
             this.pivot = this.blocks[1];
+            this.setOriginalCords();
         }
     }
     class UI {
@@ -308,9 +331,11 @@ window.addEventListener('load', function() {
             this.ui = new UI(this);
             this.blocks = ["Straight","Square","Right_Skew","Left_Skew", "L", "Reverse_L", "T"];
             this.needNewBlock = true;
+            this.isBlockHeld = false;
+            this.blockHeld = NaN;
+            this.childNode = undefined;
             this.dropTime = 300;
             this.currentTime = 0;
-            //this.keys = [];
             this.board = [];
             this.backgroundColor = 'black';
             this.blockLength = canvas.height / rows;
@@ -327,7 +352,7 @@ window.addEventListener('load', function() {
         getBlock() {
             let blockNum = parseInt(Math.random() * this.blocks.length, 10);
             if(this.blocks[blockNum] === "Straight") {
-                return new Straight(this, 'blue')
+                return new Straight(this, 'lightblue')
 
             } else if(this.blocks[blockNum] === "Square") {
                 return new Square(this, 'yellow')
@@ -469,6 +494,8 @@ window.addEventListener('load', function() {
             this.block = NaN;
             this.needNewBlock = true;
             this.clearBoard();
+            this.removeImage();
+            this.childNode = undefined;
             this.score = 0;
             this.gameOver = false;
         }
@@ -477,6 +504,42 @@ window.addEventListener('load', function() {
                 for(let col = 0; col < cols; col++) {
                     this.board[row][col] = this.backgroundColor;
                 }
+            }
+        }
+        holdBlock() {
+            this.removeBlockFromBoard();
+            this.block.returnToOriginalCords();
+            if(!this.isBlockHeld) {
+                this.blockHeld = this.block;
+                this.isBlockHeld = true;   
+                this.needNewBlock = true;
+            } else {
+                let tempBlock = this.block;
+                this.block = this.blockHeld;
+                this.blockHeld = tempBlock;
+            }
+
+            this.showImage(this.blockHeld);
+        }
+        removeBlockFromBoard() {
+            this.board = this.block.removeCords(this.board);
+        }
+        showImage(block) {
+            this.removeImage();
+            const imageName = "assets/" + block.type + ".png";
+            var img = document.createElement("img");
+            img.src = imageName;
+            img.width = 64;
+            img.height = 64;
+            img.alt = "Straight Tetromino"
+            img.id = "HoldTetromino"
+            this.childNode = img;
+            document.body.appendChild(img);
+        }
+        removeImage() {
+            if(this.childNode !== undefined)
+            {
+                document.body.removeChild(this.childNode);
             }
         }
     }
