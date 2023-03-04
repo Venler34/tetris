@@ -1,4 +1,5 @@
 // rows = 20, columns = 10
+//7-8 hours to complete
 
 window.addEventListener('load', function() {
     canvas = document.getElementById("canvas1");
@@ -21,6 +22,8 @@ window.addEventListener('load', function() {
                     game.rotate(-90);
                 } else if (e.key === "p") {
                     game.resetGame();
+                } else if (e.key === " ") {
+                    e.preventDefault();
                 }
             })
             window.addEventListener("keyup", e => {
@@ -495,7 +498,7 @@ window.addEventListener('load', function() {
             this.needNewBlock = true;
             this.clearBoard();
             this.removeImage();
-            this.childNode = undefined;
+            this.isBlockHeld = false;
             this.score = 0;
             this.gameOver = false;
         }
@@ -525,22 +528,11 @@ window.addEventListener('load', function() {
             this.board = this.block.removeCords(this.board);
         }
         showImage(block) {
-            this.removeImage();
             const imageName = "assets/" + block.type + ".png";
-            var img = document.createElement("img");
-            img.src = imageName;
-            img.width = 64;
-            img.height = 64;
-            img.alt = "Straight Tetromino"
-            img.id = "HoldTetromino"
-            this.childNode = img;
-            document.body.appendChild(img);
+            document.getElementById("TetrominoHeld").src = imageName;
         }
         removeImage() {
-            if(this.childNode !== undefined)
-            {
-                document.body.removeChild(this.childNode);
-            }
+            document.getElementById("TetrominoHeld").src = "assets/Start.png";
         }
     }
     
