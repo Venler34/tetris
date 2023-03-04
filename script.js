@@ -420,7 +420,7 @@ window.addEventListener('load', function() {
                 }
             }
 
-            this.score += Math.pow(10, rowToRemove.length);
+            this.score += this.getScore(rowToRemove.length);
 
             //delete rows
             for(let rowRemove = 0; rowRemove < rowToRemove.length; rowRemove++){
@@ -430,6 +430,19 @@ window.addEventListener('load', function() {
                         this.board[row][col] = this.board[row-1][col];
                     }
                 }
+            }
+        }
+        getScore(rowsRemoved) {
+            if(rowsRemoved === 0) {
+                return 5;
+            } else if(rowsRemoved === 1) {
+                return 40;
+            } else if(rowsRemoved === 2) {
+                return 100;
+            } else if(rowsRemoved === 3) {
+                return 300;
+            } else {
+                return 1200;
             }
         }
         checkGameOver() {
