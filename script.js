@@ -12,7 +12,7 @@ window.addEventListener('load', function() {
         constructor(game) {
             this.game = game;
             window.addEventListener("keydown", e => {
-                if(e.key === "a") {
+                if (e.key === "a") {
                     game.move(-1);
                 } else if(e.key === "d") {
                     game.move(1)
@@ -24,6 +24,8 @@ window.addEventListener('load', function() {
                     game.resetGame();
                 } else if (e.key === " ") {
                     e.preventDefault();
+                } else if (e.key === "s") {
+                    game.dropBlock();
                 }
             })
             window.addEventListener("keyup", e => {
